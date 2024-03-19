@@ -2,9 +2,9 @@
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <iostream>
+#include <span>
 #include <string>
 #include <vector>
-#include <span>
 
 using namespace std::literals;
 
@@ -102,7 +102,7 @@ TEST_CASE("strings")
     SECTION("string_view")
     {
         std::string_view sv_1 = "text";
-        
+
         std::string str = "text";
         std::string_view sv_2 = str;
 
@@ -142,16 +142,16 @@ namespace API
     namespace ModernCpp
     {
         void consume_tab(std::span<const int> data, std::string_view desc = "data")
-        {            
+        {
             std::cout << desc << ": ";
 
-            for(const auto& item : data)
+            for (const auto& item : data)
             {
                 std::cout << item << " ";
             }
             std::cout << "\n";
         }
-    }
+    } // namespace ModernCpp
 } // namespace API
 
 TEST_CASE("vector")
@@ -208,7 +208,7 @@ TEST_CASE("reference types")
     CHECK(x == 20);
 
     const int& cref_x = x;
-    //cref_x = 665;    
+    // cref_x = 665;
 }
 
 TEST_CASE("pointer types")
@@ -216,7 +216,9 @@ TEST_CASE("pointer types")
     int x = 10;
     int y = 20;
 
-    int* ptr = &x;
+    //int* ptr = nullptr;
+    int* ptr{};
+    ptr = &x;
     CHECK(*ptr == 10);
     ptr = &y;
     CHECK(*ptr == 20);
@@ -227,4 +229,52 @@ TEST_CASE("pointer types")
     int* const const_ptr = &x;
     *const_ptr = 665;
     // const_ptr = &y;
+}
+
+TEST_CASE("universal init syntax")
+{
+    SECTION("primitive types")
+    {
+        int x1;
+        int x2(10);
+        // int x3(); // most vexing parse
+        int x4 = 10;
+
+        int ux2{10};
+        int ux3{};
+
+        // uint32_t n{ux2}; // narrowing conversion
+    }
+
+    SECTION("aggregates")
+    {
+        struct X
+        {
+            int a;
+            double dx;
+        };
+
+        X x_1{10, 0.1};
+        X x_2(10, 0.1);
+
+        int tab[10] = {1, 2, 3, 4};
+    }
+
+    SECTION("classes")
+    {
+        struct X
+        {
+            int a;
+            double dx;
+
+            X(int a, double dx) : a{a}, dx{dx}
+            {                
+            }
+        };
+
+        X x_2(10, 0.1);
+        X ux_2{10, 0.1};
+
+        std::vector<int> vec = {1, 2, 3};        
+    }
 }
