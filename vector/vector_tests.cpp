@@ -5,6 +5,7 @@
 #include <ranges>
 #include <string>
 #include <vector>
+#include <string_view>
 
 using namespace std::literals;
 
@@ -21,6 +22,7 @@ namespace ModernCpp
             : size_{size}
         {
             items_ = new T[size_]{};
+			print("Vector constructed");
         }
 
         Vector(std::initializer_list<T> items)
@@ -28,6 +30,7 @@ namespace ModernCpp
             , items_{new T[size_]}
         {
             std::ranges::copy(items, items_);
+			print("Vector constructed");
         }
 
         // copy constructor
@@ -36,28 +39,31 @@ namespace ModernCpp
             , items_{new T[size_]}
         {
             std::ranges::copy(source, items_);
+			print("Vector copy constructor");
         }
 
         // copy assignment
         Vector& operator=(const Vector& source)
         {
-            // if (this != &source) // avoiding self assignment
-            // {
-            //     delete[] items_;
+            if (this != &source) // avoiding self assignment
+            {
+                delete[] items_;
 
-            //     size_ = source.size_;
-            //     items_ = new T[size_];
-            //     std::ranges::copy(source, items_);
-            // }
+                size_ = source.size_;
+                items_ = new T[size_];
+                std::ranges::copy(source, items_);
+            }
 
-			Vector temp(source); // cc
-			swap(temp);
+			// Vector temp(source); // cc
+			// swap(temp);
+			print("Vector - copy assignment");
 
             return *this;
         }
 
         ~Vector()
         {
+			print("Vector - destructor");
             delete[] items_;
         }
 
@@ -120,6 +126,16 @@ namespace ModernCpp
     private:
         size_t size_;
         T* items_;
+
+		void print(std::string_view desc) const
+		{
+			std::cout << desc << ": [ ";
+			for(const auto& item : *this)
+			{
+				std::cout << item << " ";
+			}
+			std::cout << "]\n";
+		}
     };
 } // namespace ModernCpp
 
