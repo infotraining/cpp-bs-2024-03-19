@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <string_view>
+#include <array>
 
 using namespace std::literals;
 
@@ -266,4 +267,75 @@ TEST_CASE("Vector - swap", "[Vector][swap]")
 	vec_1.swap(vec_2);
 	CHECK(vec_1 == Vector{5, 6, 7});
 	CHECK(vec_2 == Vector{1, 2, 3, 4});
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// operator ==
+
+// enum class BaudRate : uint16_t
+// {	
+// };
+
+struct BaudRate
+{
+	int value;
+
+	constexpr BaudRate(int value) : value(value)
+	{
+		constexpr std::array<uint16_t, 4> valid_values = {100, 200, 300, 400};
+		
+		if (std::ranges::find(valid_values, value) == valid_values.end())
+			throw std::invalid_argument{"Invalid value"};
+	}
+
+	bool operator==(const BaudRate&) const = default;
+};
+
+
+consteval BaudRate operator ""_br(unsigned long long value)
+{
+	// constexpr std::array<uint16_t, 4> valid_values = {100, 200, 300, 400};
+	// static_assert(std::ranges::find(valid_values, value) != valid_values.end());
+	
+	return BaudRate{static_cast<uint16_t>(value)};
+}
+
+struct Timeout
+{
+	uint16_t value;
+
+	bool operator==(const Timeout&) const = default;
+};
+
+Timeout operator ""_ms(unsigned long long value)
+{
+	return Timeout{static_cast<uint16_t>(value)};
+}
+
+Timeout operator ""_s(unsigned long long value)
+{
+	return Timeout{static_cast<uint16_t>(value * 1000)};
+}
+
+
+// void connect(int rate, int timeout)
+// {}
+
+void connect(BaudRate rate, Timeout t)
+{
+	if (t == Timeout{2000})
+	{
+		std::cout << "Waiting 2s...\n";
+	}
+}
+
+TEST_CASE("using strong typing")
+{
+	int br = 100;
+	int timeout = 2000;
+
+	connect(BaudRate{100}, Timeout{2000});
+	connect(200_br, 2000_ms);
+	connect(100_br, 2_s);
+	connect(1000_br, 2_s);
 }
