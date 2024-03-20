@@ -22,6 +22,14 @@ void deduce1(T arg)
     puts(__PRETTY_FUNCTION__);
 }
 
+namespace Cpp20
+{
+    void deduce1(auto arg)
+    {
+        puts(__PRETTY_FUNCTION__);
+    }
+}
+
 template <typename T>
 void deduce2(T& arg)
 {
@@ -37,42 +45,43 @@ void deduce3(T&& arg)
 TEST_CASE("type deduction rules")
 {
     int x = 10;
+    const int cx = 10;
     int& ref_x = x;
     const int& cref_x = x;
     int tab[10];
-    const int cx = 10;
 
     SECTION("Case 1")
     {
-        deduce1(x);
-        deduce1(ref_x);  // ref is removed
-        deduce1(cref_x); // ref & const are removed
+        deduce1(x);      // int
+        deduce1(cx);     // int - const is removed
+        deduce1(ref_x);  // int - ref is removed
+        deduce1(cref_x); // int - ref & const are removed
         deduce1(tab);    // int* - array decays to pointer
         deduce1(foo);    // void (*)(int)
-        deduce1(cx);     // const is removed
 
-        auto a1 = x;
-        auto a2 = ref_x;
-        auto a3 = cref_x;
-        auto a4 = tab;
-        auto a5 = foo;
-        auto a6 = cx; // int
+        auto a1 = x;      // int
+        auto a2 = cx;     // int
+        auto a3 = ref_x;  // int
+        auto a4 = cref_x; // int
+        auto a5 = tab;    // int*
+        auto a6 = foo;    // void (*)(int)
     }
 
     SECTION("Case 2")
     {
         deduce2(x);      // ref is added
+        deduce2(cx);     // const int&
         deduce2(ref_x);  // ref is preserved
         deduce2(cref_x); // ref & const are preserved
         deduce2(tab);    // tab size is preserved
         deduce2(foo);    // void (&)(int)
-        deduce2(cx);     // const int&
 
         auto& a1 = x;      // int&
-        auto& a2 = ref_x;  // int&
-        auto& a3 = cref_x; // const int&
-        auto& a4 = tab;    // int(&a4)[10]
-        auto& a5 = foo;    // void (&)(int)
+        auto& a2 = cx;     // const int&
+        auto& a3 = ref_x;  // int&
+        auto& a4 = cref_x; // const int&
+        auto& a5 = tab;    // int(&a4)[10]
+        auto& a6 = foo;    // void (&)(int)
     }
 
     SECTION("Case 3")
@@ -97,4 +106,14 @@ TEST_CASE("type deduction rules")
 
 TEST_CASE("decltype(auto)")
 { 
+    int x = 10;
+    decltype(x) ax;
+
+    const int cx = 665;
+    decltype(cx) acx = 43;
+
+    std::vector<decltype(x)> vec;
+
+    int& ref_x = x;
+    decltype(ref_x) another_ref = x;
 }
