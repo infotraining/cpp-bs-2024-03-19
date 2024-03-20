@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_template_test_macros.hpp>
 #include <iostream>
 #include <ranges>
 #include <string>
@@ -9,16 +10,17 @@ using namespace std::literals;
 
 namespace ModernCpp
 {
+	template <typename T>
     class Vector
     {
     public:
-		using iterator = int*;
-		using const_iterator = const int *;
+		using iterator = T*;
+		using const_iterator = const T*;
 
         Vector(size_t size)
             : size_{size}
         {
-			items_ = new int[size_]{};
+			items_ = new T[size_]{};
         }
 
         size_t size() const
@@ -58,7 +60,7 @@ namespace ModernCpp
 
     private:
         size_t size_;
-		int* items_;
+		T* items_;
     };
 } // namespace ModernCpp
 
@@ -71,19 +73,19 @@ void print(const auto& container, std::string_view desc = "data")
 		std::cout << item << " ";
 }
 
-TEST_CASE("Vector")
+TEMPLATE_TEST_CASE("Vector", "[Vector][constructors]", int, double, float, std::string)
 {
     using ModernCpp::Vector;
 
     SECTION("constructed with size")
     {
-        Vector vec(10);
+        Vector<TestType> vec(10);
 		print(vec, "vec");
         CHECK(vec.size() == 10);
 
 		SECTION("all items set to zero")
 		{
-			CHECK(rng::all_of(vec, [](int x) { return x == 0; }));
+			CHECK(rng::all_of(vec, [](auto x) { return x == TestType{}; }));
 		}
     }
 }
