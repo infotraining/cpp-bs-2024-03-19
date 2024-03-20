@@ -30,10 +30,42 @@ namespace ModernCpp
             std::ranges::copy(items, items_);
         }
 
+        // copy constructor
+        Vector(const Vector& source)
+            : size_{source.size()}
+            , items_{new T[size_]}
+        {
+            std::ranges::copy(source, items_);
+        }
+
+        // copy assignment
+        Vector& operator=(const Vector& source)
+        {
+            // if (this != &source) // avoiding self assignment
+            // {
+            //     delete[] items_;
+
+            //     size_ = source.size_;
+            //     items_ = new T[size_];
+            //     std::ranges::copy(source, items_);
+            // }
+
+			Vector temp(source); // cc
+			swap(temp);
+
+            return *this;
+        }
+
         ~Vector()
         {
             delete[] items_;
         }
+
+		void swap(Vector& that)
+		{
+			std::swap(this->size_, that.size_);
+			std::swap(this->items_, that.items_);
+		}
 
         size_t size() const
         {
@@ -75,15 +107,15 @@ namespace ModernCpp
             return items_[index];
         }
 
-		const T& operator[](size_t index) const
+        const T& operator[](size_t index) const
         {
             return items_[index];
         }
 
-		bool operator==(const Vector& that) const
-		{
-			return std::ranges::equal(*this, that);
-		}
+        bool operator==(const Vector& that) const
+        {
+            return std::ranges::equal(*this, that);
+        }
 
     private:
         size_t size_;
@@ -161,12 +193,61 @@ TEST_CASE("Vector - indexing", "[Vector][index]")
         CHECK(vec[3] == 4);
     }
 
-	SECTION("writing")
-	{
-		Vector<int> vec = {1, 2, 3, 4};
-		vec[0] = 665;
+    SECTION("writing")
+    {
+        Vector<int> vec = {1, 2, 3, 4};
+        vec[0] = 665;
 
-		CHECK(vec == Vector{665, 2, 3, 4});
-		CHECK(vec != Vector{1, 2, 3, 4}); // !(vec == Vector{1, 2, 3, 4});
+        CHECK(vec == Vector{665, 2, 3, 4});
+        CHECK(vec != Vector{1, 2, 3, 4}); // !(vec == Vector{1, 2, 3, 4});
+    }
+}
+
+namespace ModernCpp
+{
+    Vector<int> create_vector(size_t size)
+    {
+        return Vector<int>(size); // rvalue - copy elision
+    }
+} // namespace ModernCpp
+
+TEST_CASE("Vector - copy", "[Vector][copy]")
+{
+    using namespace ModernCpp;
+
+    SECTION("copy constructor")
+    {
+        Vector<int> source = {1, 2, 3, 4, 5};
+        Vector<int> backup = source; // copy
+        // Vector<int> backup(source);  // copy
+
+        CHECK(source == backup);
+    }
+
+    SECTION("copy assignment")
+    {
+        Vector<int> vec_1 = {1, 2, 3, 4};
+        Vector<int> vec_2 = {5, 6, 7};
+
+        vec_1 = vec_2; // copy assignment
+
+        CHECK(vec_1 == vec_2);
+    }
+
+	SECTION("copy elision")
+	{
+		Vector<int> vec = create_vector(1'000'000);
 	}
+}
+
+TEST_CASE("Vector - swap", "[Vector][swap]")
+{
+	using namespace ModernCpp;
+
+	Vector<int> vec_1 = {1, 2, 3, 4};
+    Vector<int> vec_2 = {5, 6, 7};
+
+	vec_1.swap(vec_2);
+	CHECK(vec_1 == Vector{5, 6, 7});
+	CHECK(vec_2 == Vector{1, 2, 3, 4});
 }
