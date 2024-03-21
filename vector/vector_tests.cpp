@@ -224,7 +224,11 @@ namespace ModernCpp
 {
     Vector<int> create_vector(size_t size)
     {
-        return Vector<int>(size); // rvalue - copy elision
+		// Vector<int> vec(size);
+		// //... push_backs
+		// return vec; // lvalue - may be optimized by copy elision
+
+        return Vector<int>(size); // rvalue - copy elision is guaranteed
     }
 } // namespace ModernCpp
 
@@ -337,5 +341,5 @@ TEST_CASE("using strong typing")
 	connect(BaudRate{100}, Timeout{2000});
 	connect(200_br, 2000_ms);
 	connect(100_br, 2_s);
-	connect(1000_br, 2_s);
+	//connect(1000_br, 2_s);
 }

@@ -43,6 +43,7 @@ add_subdirectory(oop)
 add_subdirectory(polymorphism)
 add_subdirectory(type-deduction)
 add_subdirectory(vector)
+add_subdirectory(move-semantics)
 
 add_subdirectory(_exercises/ex_primes)
 add_subdirectory(_exercises/ex_palindromes)
