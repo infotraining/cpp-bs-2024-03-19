@@ -1,12 +1,12 @@
 #include <algorithm>
+#include <array>
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <iostream>
 #include <ranges>
 #include <string>
-#include <vector>
 #include <string_view>
-#include <array>
+#include <vector>
 
 using namespace std::literals;
 
@@ -23,7 +23,7 @@ namespace ModernCpp
             : size_{size}
         {
             items_ = new T[size_]{};
-			print("Vector constructed");
+            print("Vector constructed");
         }
 
         Vector(std::initializer_list<T> items)
@@ -31,7 +31,7 @@ namespace ModernCpp
             , items_{new T[size_]}
         {
             std::ranges::copy(items, items_);
-			print("Vector constructed");
+            print("Vector constructed");
         }
 
         // copy constructor
@@ -40,7 +40,18 @@ namespace ModernCpp
             , items_{new T[size_]}
         {
             std::ranges::copy(source, items_);
-			print("Vector copy constructor");
+            print("Vector copy constructor");
+        }
+
+        // move constructor
+        Vector(Vector&& source)
+            : items_{source.items_}
+            , size_{source.size_}
+        {
+            source.items_ = nullptr;
+            source.size_ = 0;
+
+            print("Vector move constructor");
         }
 
         // copy assignment
@@ -55,24 +66,29 @@ namespace ModernCpp
                 std::ranges::copy(source, items_);
             }
 
-			// Vector temp(source); // cc
-			// swap(temp);
-			print("Vector - copy assignment");
+            // Vector temp(source); // cc
+            // swap(temp);
+            print("Vector - copy assignment");
 
             return *this;
         }
 
+        
+
         ~Vector()
         {
-			print("Vector - destructor");
+            if (items_ == nullptr)
+                print("Vector - destructor after move");
+            else
+                print("Vector - destructor");
             delete[] items_;
         }
 
-		void swap(Vector& that)
-		{
-			std::swap(this->size_, that.size_);
-			std::swap(this->items_, that.items_);
-		}
+        void swap(Vector& that)
+        {
+            std::swap(this->size_, that.size_);
+            std::swap(this->items_, that.items_);
+        }
 
         size_t size() const
         {
@@ -128,15 +144,15 @@ namespace ModernCpp
         size_t size_;
         T* items_;
 
-		void print(std::string_view desc) const
-		{
-			std::cout << desc << ": [ ";
-			for(const auto& item : *this)
-			{
-				std::cout << item << " ";
-			}
-			std::cout << "]\n";
-		}
+        void print(std::string_view desc) const
+        {
+            std::cout << desc << ": [ ";
+            for (const auto& item : *this)
+            {
+                std::cout << item << " ";
+            }
+            std::cout << "]\n";
+        }
     };
 } // namespace ModernCpp
 
@@ -224,9 +240,9 @@ namespace ModernCpp
 {
     Vector<int> create_vector(size_t size)
     {
-		// Vector<int> vec(size);
-		// //... push_backs
-		// return vec; // lvalue - may be optimized by copy elision
+        // Vector<int> vec(size);
+        // //... push_backs
+        // return vec; // lvalue - may be optimized by copy elision
 
         return Vector<int>(size); // rvalue - copy elision is guaranteed
     }
@@ -255,91 +271,115 @@ TEST_CASE("Vector - copy", "[Vector][copy]")
         CHECK(vec_1 == vec_2);
     }
 
-	SECTION("copy elision")
-	{
-		Vector<int> vec = create_vector(1'000'000);
-	}
+    SECTION("copy elision")
+    {
+        Vector<int> vec = create_vector(1'000'000);
+    }
 }
 
 TEST_CASE("Vector - swap", "[Vector][swap]")
 {
-	using namespace ModernCpp;
+    using namespace ModernCpp;
 
-	Vector<int> vec_1 = {1, 2, 3, 4};
+    Vector<int> vec_1 = {1, 2, 3, 4};
     Vector<int> vec_2 = {5, 6, 7};
 
-	vec_1.swap(vec_2);
-	CHECK(vec_1 == Vector{5, 6, 7});
-	CHECK(vec_2 == Vector{1, 2, 3, 4});
+    vec_1.swap(vec_2);
+    CHECK(vec_1 == Vector{5, 6, 7});
+    CHECK(vec_2 == Vector{1, 2, 3, 4});
+}
+
+TEST_CASE("Vector - move semantics")
+{
+    using namespace ModernCpp;
+
+    SECTION("move constructor")
+    {
+        Vector<int> vec = {1, 2, 3, 4};
+        Vector<int> target = std::move(vec);
+
+        CHECK(target == Vector{1, 2, 3, 4});
+        CHECK(vec.size() == 0);
+    }
+
+	SECTION("move assignment")
+    {
+        Vector<int> vec = {1, 2, 3, 4};
+		
+		Vector<int> target = {8, 9};
+        target = std::move(vec);
+
+        CHECK(target == Vector{1, 2, 3, 4});
+        CHECK(vec.size() == 0);
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////
 // operator ==
 
 // enum class BaudRate : uint16_t
-// {	
+// {
 // };
 
 struct BaudRate
 {
-	int value;
+    int value;
 
-	constexpr BaudRate(int value) : value(value)
-	{
-		constexpr std::array<uint16_t, 4> valid_values = {100, 200, 300, 400};
-		
-		if (std::ranges::find(valid_values, value) == valid_values.end())
-			throw std::invalid_argument{"Invalid value"};
-	}
+    constexpr BaudRate(int value)
+        : value(value)
+    {
+        constexpr std::array<uint16_t, 4> valid_values = {100, 200, 300, 400};
 
-	bool operator==(const BaudRate&) const = default;
+        if (std::ranges::find(valid_values, value) == valid_values.end())
+            throw std::invalid_argument{"Invalid value"};
+    }
+
+    bool operator==(const BaudRate&) const = default;
 };
 
-
-consteval BaudRate operator ""_br(unsigned long long value)
+consteval BaudRate operator""_br(unsigned long long value)
 {
-	// constexpr std::array<uint16_t, 4> valid_values = {100, 200, 300, 400};
-	// static_assert(std::ranges::find(valid_values, value) != valid_values.end());
-	
-	return BaudRate{static_cast<uint16_t>(value)};
+    // constexpr std::array<uint16_t, 4> valid_values = {100, 200, 300, 400};
+    // static_assert(std::ranges::find(valid_values, value) != valid_values.end());
+
+    return BaudRate{static_cast<uint16_t>(value)};
 }
 
 struct Timeout
 {
-	uint16_t value;
+    uint16_t value;
 
-	bool operator==(const Timeout&) const = default;
+    bool operator==(const Timeout&) const = default;
 };
 
-Timeout operator ""_ms(unsigned long long value)
+Timeout operator""_ms(unsigned long long value)
 {
-	return Timeout{static_cast<uint16_t>(value)};
+    return Timeout{static_cast<uint16_t>(value)};
 }
 
-Timeout operator ""_s(unsigned long long value)
+Timeout operator""_s(unsigned long long value)
 {
-	return Timeout{static_cast<uint16_t>(value * 1000)};
+    return Timeout{static_cast<uint16_t>(value * 1000)};
 }
-
 
 // void connect(int rate, int timeout)
 // {}
 
 void connect(BaudRate rate, Timeout t)
 {
-	if (t == Timeout{2000})
-	{
-		std::cout << "Waiting 2s...\n";
-	}
+    if (t == Timeout{2000})
+    {
+        std::cout << "Waiting 2s...\n";
+    }
 }
 
 TEST_CASE("using strong typing")
 {
-	int br = 100;
-	int timeout = 2000;
+    int br = 100;
+    int timeout = 2000;
 
-	connect(BaudRate{100}, Timeout{2000});
-	connect(200_br, 2000_ms);
-	connect(100_br, 2_s);
-	//connect(1000_br, 2_s);
+    connect(BaudRate{100}, Timeout{2000});
+    connect(200_br, 2000_ms);
+    connect(100_br, 2_s);
+    // connect(1000_br, 2_s);
 }
