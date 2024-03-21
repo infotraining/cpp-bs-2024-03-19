@@ -43,17 +43,6 @@ namespace ModernCpp
             print("Vector copy constructor");
         }
 
-        // move constructor
-        Vector(Vector&& source)
-            : items_{source.items_}
-            , size_{source.size_}
-        {
-            source.items_ = nullptr;
-            source.size_ = 0;
-
-            print("Vector move constructor");
-        }
-
         // copy assignment
         Vector& operator=(const Vector& source)
         {
@@ -73,14 +62,39 @@ namespace ModernCpp
             return *this;
         }
 
-        
+		// move constructor
+        Vector(Vector&& source)
+            : items_{source.items_}
+            , size_{source.size_}
+        {
+            source.items_ = nullptr;
+            source.size_ = 0;
+
+            print("Vector move constructor");
+        }
+
+        // move assignment
+        Vector& operator=(Vector&& source)
+        {
+            if (this != &source) // avoiding self assignment
+            {
+                delete[] items_;
+
+                size_ = source.size_;
+                items_ = source.items_;
+
+                source.size_ = 0;
+                source.items_ = nullptr;
+            }
+
+            print("Vector - move assignment");
+
+            return *this;
+        }
 
         ~Vector()
         {
-            if (items_ == nullptr)
-                print("Vector - destructor after move");
-            else
-                print("Vector - destructor");
+            print("Vector - destructor");
             delete[] items_;
         }
 
@@ -147,10 +161,16 @@ namespace ModernCpp
         void print(std::string_view desc) const
         {
             std::cout << desc << ": [ ";
-            for (const auto& item : *this)
+
+            if (items_)
             {
-                std::cout << item << " ";
+                for (const auto& item : *this)
+                {
+                    std::cout << item << " ";
+                }
             }
+			else
+				std::cout << "after move ";
             std::cout << "]\n";
         }
     };
@@ -302,11 +322,11 @@ TEST_CASE("Vector - move semantics")
         CHECK(vec.size() == 0);
     }
 
-	SECTION("move assignment")
+    SECTION("move assignment")
     {
         Vector<int> vec = {1, 2, 3, 4};
-		
-		Vector<int> target = {8, 9};
+
+        Vector<int> target = {8, 9};
         target = std::move(vec);
 
         CHECK(target == Vector{1, 2, 3, 4});
