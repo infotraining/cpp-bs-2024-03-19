@@ -68,6 +68,12 @@ namespace Explain
     private:
         T* ptr_;
     };
+
+    template <typename T, typename... TArgs>
+    unique_ptr<T> make_unique(TArgs&&... args) // variadic templates
+    {
+        return unique_ptr<T>(new T(std::forward<TArgs>(args)...));
+    }
 } // namespace Explain
 
 Explain::unique_ptr<Helpers::Gadget> create_gadget(int id)
@@ -82,7 +88,8 @@ TEST_CASE("move semantics - unique_ptr")
     using Helpers::Gadget;
 
     {
-        Explain::unique_ptr<Gadget> ptr_g(new Gadget(42, "ipad"));
+        //Explain::unique_ptr<Gadget> ptr_g(new Gadget(42, "ipad"));
+        Explain::unique_ptr<Gadget> ptr_g = Explain::make_unique<Gadget>();
         ptr_g->use();
         (*ptr_g).use();
 
@@ -166,8 +173,30 @@ struct CompositeObject
     std::shared_ptr<Helpers::Gadget> g;
     std::vector<int> data;
 
-    CompositeObject(std::string id) : id{std::move(id)}
+    CompositeObject(std::string id, std::shared_ptr<Helpers::Gadget> g, std::vector<int> data) 
+        : id{std::move(id)}
+        , g{std::move(g)}
+        , data{std::move(data)}
     {}
+
+    // CompositeObject(std::string id) : id{std::move(id)}
+    // {}
 
     // Rule of Zero
 };
+
+TEST_CASE("Composite object - passing args")
+{
+    CompositeObject co("ID#665", std::make_shared<Helpers::Gadget>(13), std::vector<int>{1, 2, 3, 4});
+}
+
+TEST_CASE("push_back vs. emplace_back")
+{
+    using Helpers::Gadget;
+
+    std::vector<Gadget> gadgets;
+
+    gadgets.push_back(Gadget{43, "ipod"});
+
+    gadgets.emplace_back(44, "ipad"); // most efficient way to insert into container
+}

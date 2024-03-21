@@ -154,6 +154,40 @@ namespace ModernCpp
             return std::ranges::equal(*this, that);
         }
 
+		// void push_back(const T& item)
+		// {			
+		// 	T* new_items = new T[size() + 1];
+		// 	new_items[size()] = item;
+		// 	std::ranges::move(*this, new_items);
+
+		// 	delete[] items_;
+		// 	items_ = new_items;
+		// 	++size_;
+		// }
+
+		// void push_back(T&& item)
+		// {
+		// 	T* new_items = new T[size() + 1];
+		// 	new_items[size()] = std::move(item);
+		// 	std::ranges::move(*this, new_items);
+
+		// 	delete[] items_;
+		// 	items_ = new_items;
+		// 	++size_;
+		// }
+
+		template <typename TItem>
+		void push_back(TItem&& item)
+		{			
+			T* new_items = new T[size() + 1];
+			new_items[size()] = std::forward<TItem>(item);
+			std::ranges::move(*this, new_items);
+
+			delete[] items_;
+			items_ = new_items;
+			++size_;
+		}
+
     private:
         size_t size_;
         T* items_;
@@ -332,6 +366,31 @@ TEST_CASE("Vector - move semantics")
         CHECK(target == Vector{1, 2, 3, 4});
         CHECK(vec.size() == 0);
     }
+}
+
+TEST_CASE("Vector - push_back", "[Vector][push_back]")
+{
+	using namespace ModernCpp;
+
+	Vector<std::string> vec = { "abc", "def", "ghi" };
+
+	SECTION("lvalue")
+	{
+		std::string str = "jkl";
+
+		vec.push_back(str);
+
+		CHECK(vec.size() == 4);
+		CHECK(vec == Vector{"abc"s, "def"s, "ghi"s, "jkl"s});
+	}
+
+	SECTION("rvalue")
+	{
+		vec.push_back(std::string("jkl"));
+
+		CHECK(vec.size() == 4);
+		CHECK(vec[3] == "jkl");
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////
