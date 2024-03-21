@@ -63,7 +63,7 @@ namespace ModernCpp
         }
 
 		// move constructor
-        Vector(Vector&& source)
+        Vector(Vector&& source) noexcept
             : items_{source.items_}
             , size_{source.size_}
         {
@@ -74,7 +74,7 @@ namespace ModernCpp
         }
 
         // move assignment
-        Vector& operator=(Vector&& source)
+        Vector& operator=(Vector&& source) noexcept
         {
             if (this != &source) // avoiding self assignment
             {
@@ -92,59 +92,59 @@ namespace ModernCpp
             return *this;
         }
 
-        ~Vector()
+        ~Vector() noexcept
         {
             print("Vector - destructor");
             delete[] items_;
         }
 
-        void swap(Vector& that)
+        void swap(Vector& that) noexcept
         {
             std::swap(this->size_, that.size_);
             std::swap(this->items_, that.items_);
         }
 
-        size_t size() const
+        size_t size() const noexcept
         {
             return size_;
         }
 
-        iterator begin()
+        iterator begin() noexcept
         {
             return items_;
         }
 
-        iterator end()
+        iterator end() noexcept
         {
             return items_ + size_;
         }
 
-        const_iterator begin() const
+        const_iterator begin() const noexcept
         {
             return items_;
         }
 
-        const_iterator end() const
+        const_iterator end() const noexcept
         {
             return items_ + size_;
         }
 
-        const_iterator cbegin() const
+        const_iterator cbegin() const noexcept
         {
             return items_;
         }
 
-        const_iterator cend() const
+        const_iterator cend() const noexcept
         {
             return items_ + size_;
         }
 
-        T& operator[](size_t index)
+        T& operator[](size_t index) noexcept
         {
             return items_[index];
         }
 
-        const T& operator[](size_t index) const
+        const T& operator[](size_t index) const noexcept
         {
             return items_[index];
         }
@@ -181,7 +181,15 @@ namespace ModernCpp
 		{			
 			T* new_items = new T[size() + 1];
 			new_items[size()] = std::forward<TItem>(item);
-			std::ranges::move(*this, new_items);
+
+			if constexpr(std::is_nothrow_constructible_v<T>)
+			{
+				std::ranges::move(*this, new_items);
+			}
+			else
+			{
+				std::ranges::copy(*this, new_items);
+			}
 
 			delete[] items_;
 			items_ = new_items;
@@ -390,6 +398,20 @@ TEST_CASE("Vector - push_back", "[Vector][push_back]")
 
 		CHECK(vec.size() == 4);
 		CHECK(vec[3] == "jkl");
+	}
+}
+
+TEST_CASE("Vector - noexcept")
+{
+	using namespace ModernCpp;
+
+	std::vector<Vector<int>> vec;
+	//vec.reserve(10);
+
+	for(int i = 0; i < 10; ++i)
+	{
+		vec.push_back(Vector<int>{i});
+		std::cout << "-------------------\n";
 	}
 }
 
