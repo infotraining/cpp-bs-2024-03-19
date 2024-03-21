@@ -48,13 +48,68 @@ namespace WithoutPerfectForwarding
     }
 } // namespace WithoutPerfectForwarding
 
+namespace PerfectForwarding
+{
+    template <typename TGadget>
+    void use(TGadget&& g)
+    {
+        have_fun(std::forward<TGadget>(g));
+
+        // if constexpr(std::is_reference_v<TGadget>)
+        //     have_fun(g);
+        // else
+        //     have_fun(std::move(g))
+    }  
+
+    namespace Cpp20
+    {
+        void use(auto&& g)
+        {
+            have_fun(std::forward<decltype(g)>(g));
+        }
+    }  
+
+    namespace LValue
+    {
+        template <typename TGadget = Gadget&>
+        void use(TGadget&& g) // Gadget& && g -> Gadget&
+        {
+            have_fun(g);
+        }    
+    }
+
+    namespace RValue
+    {
+        template <typename TGadget = Gadget>
+        void use(TGadget&& g) // Gadget&& g
+        {
+            have_fun(std::move(g));
+        }    
+    }
+
+    void non_template_use(Gadget&& g)
+    {
+        have_fun(std::move(g));
+    }
+}
+
+TEST_CASE("auto and && - universal reference")
+{
+    std::string text = "abc";
+    
+    auto&& item_1 = text; // string&
+    auto&& item_2 = std::string("abc"); // string&&
+}
+
 TEST_CASE("using gadget")
 {
     Gadget g{1, "g"};
     const Gadget cg{2, "const g"};
 
-    using WithoutPerfectForwarding::use;
+    using PerfectForwarding::use;
+    using PerfectForwarding::non_template_use;
 
+    //non_template_use(g);
     use(g);
     use(cg);
     use(Gadget{3, "temporary gadget"});
