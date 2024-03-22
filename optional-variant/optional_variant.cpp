@@ -273,4 +273,12 @@ TEST_CASE("using variant as polymorphic type")
 
     shp = Square(99, 434, 54);
     shp.draw();
+
+
+    std::vector<Shape> shapes;
+    shapes.push_back(Circle{1, 2, 4});
+    shapes.push_back(Square{7, 4, 6});
+
+    for(const auto& s : shapes)
+        s.draw();
 }
