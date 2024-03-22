@@ -7,6 +7,7 @@ namespace Drawing
 {
     class Shape
     {
+    private:
         Point coord_;
 
     public:
@@ -26,8 +27,25 @@ namespace Drawing
         }
 
         void draw() const;
+    protected:
+        Point coord() const
+        {
+            return coord_;
+        }
     };
 
+    class Circle : public Shape
+    {
+        uint16_t radius_;
+    public:
+        Circle(int x = 0, int y = 0, uint16_t r = 0) : Shape{x, y}, radius_{r}
+        {}
+
+        void draw() const
+        {
+            std::cout << "Drawing Circle at " << coord() << " with radius " << radius_ << "\n";
+        }
+    };
 } // namespace Drawing
 
 #endif // SHAPE_HPP
