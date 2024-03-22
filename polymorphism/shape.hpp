@@ -2,51 +2,72 @@
 #define SHAPE_HPP
 
 #include "point.hpp"
+#include <cassert>
 
 namespace Drawing
 {
-    // abstract class - draw() is pure virtual
+    // inteface
     class Shape
+    {
+    public:
+        virtual void move(int dx, int dy) = 0;
+        virtual void draw() const = 0;
+        virtual ~Shape() = default;
+    };
+
+    // abstract class - draw() is pure virtual
+    class ShapeBase : public Shape
     {
     private:
         Point coord_;
 
     public:
-        Shape(int x = 0, int y = 0)
+        explicit ShapeBase(int x = 0, int y = 0)
             : coord_{x, y}
         {
         }
 
-        Shape(Point pt)
+        ShapeBase(Point pt)
             : coord_{pt}
         {
         }
 
-        virtual void move(int dx, int dy)
+        void move(int dx, int dy) override
         {
             coord_.translate(dx, dy);
         }
-
-        virtual void draw() const = 0; // pure-virtual method - abstract method
-
-        virtual ~Shape() = default;
 
     protected:
         Point coord() const
         {
             return coord_;
         }
+
+        void set_coord(const Point& coord)
+        {
+            coord_ = coord;
+        }
     };
 
-    class Circle : public Shape
+    class Circle : public ShapeBase
     {
         uint16_t radius_;
 
     public:
-        Circle(int x = 0, int y = 0, uint16_t r = 0)
-            : Shape{x, y}
+        explicit Circle(int x = 0, int y = 0, uint16_t r = 0)
+            : ShapeBase{x, y}
             , radius_{r}
         { }
+
+        uint16_t radius() const
+        {
+            return radius_;
+        }
+
+        void set_radius(uint16_t r)
+        {
+            radius_ = r;
+        }
 
         void draw() const override
         {
@@ -54,14 +75,34 @@ namespace Drawing
         }
     };
 
-    class Rectangle : public Shape
+    class Rectangle : public ShapeBase
     {
     public:
-        Rectangle(int x = 0, int y = 0, uint16_t w = 0, uint16_t h = 0)
-            : Shape{x, y}
+        explicit Rectangle(int x = 0, int y = 0, uint16_t w = 0, uint16_t h = 0)
+            : ShapeBase{x, y}
             , w_{w}
             , h_{h}
         {
+        }
+
+        uint16_t width() const
+        {
+            return w_;
+        }
+
+        void set_width(uint16_t w)
+        {
+            w_ = w;
+        }
+
+        uint16_t height() const
+        {
+            return w_;
+        }
+
+        void set_height(uint16_t h)
+        {
+            h_ = h;
         }
 
         void draw() const override
@@ -74,12 +115,14 @@ namespace Drawing
         uint16_t h_;
     };
 
-    class Line : public Shape
+    class Line : public ShapeBase
     {
         Point end_coord_;
+
     public:
-        Line(int x = 0, int y = 0, int end_x = 0, int end_y = 0)
-            : Shape{x, y}, end_coord_{end_x, end_y}
+        explicit Line(int x = 0, int y = 0, int end_x = 0, int end_y = 0)
+            : ShapeBase{x, y}
+            , end_coord_{end_x, end_y}
         {
         }
 
@@ -90,8 +133,41 @@ namespace Drawing
 
         void move(int dx, int dy) override
         {
-            Shape::move(dx, dy); // call move from base class
+            ShapeBase::move(dx, dy); // call move from base class
             end_coord_.translate(dx, dy);
+        }
+    };
+
+    class Square : public Shape
+    {
+        Rectangle rect_;
+    public:
+        explicit Square(int x = 0, int y = 0, uint16_t s = 0)
+            : rect_{x, y, s, s}
+        {
+            assert(rect_.width() == rect_.height());
+        }
+
+        int16_t size() const
+        {
+            return rect_.width();
+        }
+
+        void set_size(int16_t s)
+        {
+            rect_.set_width(s);
+            rect_.set_height(s);
+            assert(rect_.width() == rect_.height());
+        }
+
+        void move(int dx, int dy) override
+        {
+            rect_.move(dx, dy);
+        }
+
+        void draw() const override
+        {
+            rect_.draw();
         }
     };
 } // namespace Drawing
