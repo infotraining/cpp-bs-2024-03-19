@@ -2,8 +2,11 @@
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <iostream>
+#include <numeric>
+#include <ranges>
 #include <span>
 #include <string>
+#include <tuple>
 #include <vector>
 
 using namespace std::literals;
@@ -216,7 +219,7 @@ TEST_CASE("pointer types")
     int x = 10;
     int y = 20;
 
-    //int* ptr = nullptr;
+    // int* ptr = nullptr;
     int* ptr{};
     ptr = &x;
     CHECK(*ptr == 10);
@@ -267,14 +270,202 @@ TEST_CASE("universal init syntax")
             int a;
             double dx;
 
-            X(int a, double dx) : a{a}, dx{dx}
-            {                
+            X(int a, double dx)
+                : a{a}
+                , dx{dx}
+            {
             }
         };
 
         X x_2(10, 0.1);
         X ux_2{10, 0.1};
 
-        std::vector<int> vec = {1, 2, 3};        
+        std::vector<int> vec = {1, 2, 3};
     }
+}
+
+struct TupleLike
+{
+    int m1;
+    double m2;
+    std::string m3;
+    std::vector<int> m4;
+};
+
+std::tuple<int, int, double> calc_stats(std::ranges::range auto const& data)
+{
+    // std::pair<std::vector<int>::const_iterator, std::vector<int>::const_iterator> minmax_pos = std::minmax_element(data.begin(), data.end());
+
+    // int min = *minmax_pos.first;
+    // int max = *minmax_pos.second;
+
+    const auto [min_pos, max_pos] = std::minmax_element(std::ranges::begin(data), std::ranges::end(data)); // Structured Bindings auto [x, y, z] = tuple{1, 2, 3}
+
+    double avg = std::accumulate(std::ranges::begin(data), std::ranges::end(data), 0.0) / std::ranges::size(data);
+
+    return std::tuple{*min_pos, *max_pos, avg};
+}
+
+TEST_CASE("tuples")
+{
+    std::tuple<int, double, std::string, std::vector<int>> tpl_1{42, 3.14, "abc", std::vector{1, 2, 3}};
+
+    // since C++17 - CTAD
+    std::tuple tpl_2{1, 3.14, "abc"s}; // std::tuple<int, double, std::string>
+
+    int tab[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+
+    auto [min, max, avg] = calc_stats(tab);
+
+    std::cout << std::format("min:{}; max:{}, avg:{}\n", min, max, avg);
+}
+
+template <typename TContainer>
+void print(TContainer&& container, std::string_view desc = "data")
+{
+    std::cout << desc << ": ";
+    for (const auto& item : container)
+        std::cout << item << " ";
+    std::cout << "\n";
+}
+
+TEST_CASE("ranges")
+{
+    int tab[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+
+    auto evens = tab | std::views::filter([](int x) { return x % 2 == 0; });
+    print(evens, "data");
+
+    for (auto& item : evens)
+    {
+        item = 0;
+    }
+
+    print(tab, "tab");
+
+    auto squares = std::views::iota(1)
+        | std::views::filter([](int x) { return x > 3; })
+        | std::views::transform([](int x) { return x * x; })
+        | std::views::take(10);
+
+    print(squares, "squares");
+
+    std::string str = "abc def ghi";
+
+    std::string_view delim = " "sv;
+
+    for (const auto& token : str | std::views::split(delim))
+    {
+        std::cout << "size: " << token.size() << " - ";
+        print(token, "token");
+    }
+}
+
+// namespace Cpp23
+// {
+//     std::generator<int> get_squares(auto&& rng data)
+//     {
+//         for (const auto& item : data)
+//             co_yield item* item;
+//     }
+
+//     TEST_CASE("generator")
+//     {
+//         for (int x : get_squares(std::vector{1, 2, 3}))
+//         {
+//             std::cout << x << "\n";
+//         }
+//     }
+// } // namespace Cpp23
+
+///////////////////////////////////////////////////////////////////////
+// comparisons - pre C++20
+
+namespace Comparisons
+{
+    namespace BeforeCpp20
+    {
+        struct Data
+        {
+            int x;
+            double dx;
+            std::string str;
+
+            auto tied() const
+            {
+                return std::tie(x, dx, str);
+            }
+
+            bool operator==(const Data& other) const
+            {
+                // return x == other.x && dx == other.dx && str == other.str;
+                return tied() == other.tied();
+            }
+
+            bool operator!=(const Data& other) const
+            {
+                return !(*this == other);
+            }
+
+            bool operator<(const Data& other) const
+            {
+                // if (x == other.x)
+                // {
+                //     if (dx == other.dx)
+                //     {
+                //         return str < other.str;
+                //     }
+
+                //     return dx < other.dx;
+                // }
+
+                // return x < other.x;
+
+                // return std::tie(x, dx, str) < std::tie(other.x, other.dx, other.str);
+
+                return tied() < other.tied();
+            }
+        };
+    } // namespace BeforeCpp20
+
+    inline namespace Cpp20
+    {
+        struct Data
+        {
+            int x;
+            double dx;
+            std::string str;
+
+            //bool operator(const Data&) const = default; 
+
+            auto operator<=>(const Data&) const = default;
+        };
+    } // namespace BeforeCpp20
+} // namespace Comparisons
+
+TEST_CASE("tie")
+{
+    int x;
+    double dx;
+
+    std::tuple<int&, double&> ref_tpl{x, dx}; // tuple with refs
+
+    ref_tpl = std::tuple{1, 3.14};
+    CHECK(x == 1);
+    CHECK(dx == 3.14);
+
+    CHECK(std::tie(x, dx) == std::tuple{1, 3.14});
+}
+
+TEST_CASE("comparisons - < C++20")
+{
+    using namespace Comparisons;
+
+    Data d1{1, 3.14, "abc"};
+    Data d2{1, 3.14, "abc"};
+    Data d3{1, 3.14, "def"};
+
+    CHECK(d1 == d2);
+    CHECK(d1 != d2);
+    CHECK(d1 < d3);
 }
