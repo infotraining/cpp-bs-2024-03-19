@@ -11,6 +11,7 @@
 #include <vector>
 #include <functional>
 #include <format>
+#include <optional>
 
 using namespace std::literals;
 
