@@ -12,13 +12,13 @@ TEST_CASE("polymorphism")
 {
     using namespace Drawing;
 
-    SECTION("Shape")
-    {
-        Shape shp{10, 20};
-        shp.draw();
-        shp.move(12, 55);
-        shp.draw();
-    }
+    // SECTION("Shape")
+    // {
+    //     Shape shp{10, 20};
+    //     shp.draw();
+    //     shp.move(12, 55);
+    //     shp.draw();
+    // }
 
     SECTION("Circle")
     {
@@ -64,7 +64,17 @@ TEST_CASE("polymorphic objects")
     shapes.push_back(std::make_unique<Circle>(17, 87, 60));
     shapes.push_back(std::make_unique<Rectangle>(7, 78, 66, 33));
     shapes.push_back(std::make_unique<Circle>(78, 80, 30));
+    shapes.push_back(std::make_unique<Line>(10, 20, 60, 70));
 
     for(const auto& shp : shapes)
         shp->draw();   
+
+    std::cout << "----------------------\n";
+
+    for(const auto& shp : shapes)
+        shp->move(100, 200);
+
+    for(const auto& shp : shapes)
+        shp->draw();   
+
 }

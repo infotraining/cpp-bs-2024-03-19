@@ -5,6 +5,7 @@
 
 namespace Drawing
 {
+    // abstract class - draw() is pure virtual
     class Shape
     {
     private:
@@ -21,17 +22,14 @@ namespace Drawing
         {
         }
 
-        void move(int dx, int dy)
+        virtual void move(int dx, int dy)
         {
             coord_.translate(dx, dy);
         }
 
-        virtual void draw() const;
+        virtual void draw() const = 0; // pure-virtual method - abstract method
 
-        virtual ~Shape() 
-        {
-            std::cout << "~Shape()\n";
-        }
+        virtual ~Shape() = default;
 
     protected:
         Point coord() const
@@ -54,11 +52,6 @@ namespace Drawing
         {
             std::cout << "Drawing Circle at " << coord() << " with radius " << radius_ << "\n";
         }
-
-        ~Circle() override
-        {
-            std::cout << "~Circle()\n";
-        }
     };
 
     class Rectangle : public Shape
@@ -76,14 +69,30 @@ namespace Drawing
             std::cout << "Drawing Rectangle at " << coord() << " with dimensions (width: " << w_ << ", height: " << h_ << ")\n";
         }
 
-        ~Rectangle() override
-        {
-            std::cout << "~Rectangle()\n";
-        }
-
     private:
         uint16_t w_;
         uint16_t h_;
+    };
+
+    class Line : public Shape
+    {
+        Point end_coord_;
+    public:
+        Line(int x = 0, int y = 0, int end_x = 0, int end_y = 0)
+            : Shape{x, y}, end_coord_{end_x, end_y}
+        {
+        }
+
+        void draw() const override
+        {
+            std::cout << "Drawing Line from " << coord() << " to " << end_coord_ << "\n";
+        }
+
+        void move(int dx, int dy) override
+        {
+            Shape::move(dx, dy); // call move from base class
+            end_coord_.translate(dx, dy);
+        }
     };
 } // namespace Drawing
 
